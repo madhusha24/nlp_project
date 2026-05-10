@@ -23,170 +23,200 @@
 
 <body>
 
-    <div class="main-container">
+<div class="main-container">
 
-        <!-- HERO -->
+    <!-- HERO -->
 
-        <div class="hero-section">
+    <div class="hero-section">
 
-            <h1>
-                INTERVIEW<span>PULSE</span>
-            </h1>
+        <h1>
+            INTERVIEW<span>PULSE</span>
+        </h1>
 
-            <p>
-                Futuristic AI Interview Assessment Platform
-            </p>
+        <p>
+            Futuristic AI Interview Assessment Platform
+        </p>
 
-        </div>
+    </div>
 
-        <!-- CONTROL PANEL -->
+    <!-- CONTROLS -->
 
-        <div class="control-panel">
+    <div class="control-panel">
 
-            <div class="input-group">
+        <div class="input-group">
 
-                <label>ROLE</label>
+            <label>ROLE</label>
 
-                <select id="role">
+            <select id="role">
 
-                    <option>Software Developer</option>
-                    <option>Data Scientist</option>
-                    <option>AI/ML Engineer</option>
-                    <option>Data Analyst</option>
-                    <option>HR Interview</option>
+                <option>Software Developer</option>
+                <option>Data Scientist</option>
+                <option>AI/ML Engineer</option>
+                <option>Data Analyst</option>
+                <option>HR Interview</option>
 
-                </select>
-
-            </div>
-
-            <div class="input-group">
-
-                <label>INTERVIEW STYLE</label>
-
-                <select id="style">
-
-                    <option>Google Style</option>
-                    <option>Startup Style</option>
-                    <option>TCS/Infosys Style</option>
-
-                </select>
-
-            </div>
-
-            <button
-                onclick="startInterview()"
-                class="start-btn">
-
-                START INTERVIEW
-
-            </button>
+            </select>
 
         </div>
 
-        <!-- QUESTION -->
+        <div class="input-group">
 
-        <div class="glass-card">
+            <label>INTERVIEW STYLE</label>
 
-            <div class="card-header">
+            <select id="style">
 
-                CURRENT QUESTION
+                <option>Google Style</option>
+                <option>Startup Style</option>
+                <option>TCS/Infosys Style</option>
 
-            </div>
-
-            <div
-                id="question"
-                class="question-text">
-
-                Press Start Interview
-
-            </div>
+            </select>
 
         </div>
 
-        <!-- ANSWER -->
+        <button
+            onclick="startInterview()"
+            class="start-btn">
 
-        <div class="glass-card">
+            START INTERVIEW
 
-            <div class="card-header">
+        </button>
 
-                YOUR ANSWER
+    </div>
 
-            </div>
+    <!-- TIMER -->
 
-            <textarea
-                id="answer"
-                placeholder="Your speech will appear here..."
-            ></textarea>
+    <div class="timer-box">
 
-            <!-- VOICE CONTROLS -->
+        ⏳ Time Left:
+        <span id="timer">
+            00:00
+        </span>
 
-            <div class="voice-controls">
+    </div>
 
-                <button
-                    onclick="startVoiceInput()"
-                    class="voice-btn">
+    <!-- QUESTION -->
 
-                    🎤 START SPEAKING
+    <div class="glass-card">
 
-                </button>
+        <div class="card-header">
 
-                <div
-                    class="voice-status"
-                    id="voiceStatus">
-
-                    Voice Assistant Idle
-
-                </div>
-
-            </div>
-
-            <!-- AUDIO VISUALIZER -->
-
-            <div class="audio-visualizer">
-
-                <span></span>
-                <span></span>
-                <span></span>
-                <span></span>
-                <span></span>
-
-            </div>
-
-            <!-- SUBMIT -->
-
-            <button
-                onclick="submitAnswer()"
-                class="submit-btn">
-
-                SUBMIT ANSWER
-
-            </button>
+            QUESTION
+            <span id="questionCount">
+                0/10
+            </span>
 
         </div>
 
-        <!-- FEEDBACK -->
+        <div
+            id="question"
+            class="question-text">
 
-        <div class="glass-card feedback-card">
-
-            <div class="card-header">
-
-                AI FEEDBACK
-
-            </div>
-
-            <pre id="feedback">
-
-Waiting for response...
-
-            </pre>
+            Press Start Interview
 
         </div>
 
     </div>
 
+    <!-- ANSWER -->
+
+    <div class="glass-card">
+
+        <div class="card-header">
+
+            YOUR ANSWER
+
+        </div>
+
+        <textarea
+            id="answer"
+            placeholder="Your speech will appear here..."
+        ></textarea>
+
+        <!-- VOICE CONTROLS -->
+
+        <div class="voice-controls">
+
+            <button
+                onclick="startVoiceInput()"
+                class="voice-btn">
+
+                🎤 START SPEAKING
+
+            </button>
+
+            <button
+                onclick="stopVoiceInput()"
+                class="stop-btn">
+
+                ⏹ STOP SPEAKING
+
+            </button>
+
+        </div>
+
+        <div
+            class="voice-status"
+            id="voiceStatus">
+
+            Voice Assistant Idle
+
+        </div>
+
+        <!-- VISUALIZER -->
+
+        <div class="audio-visualizer">
+
+            <span></span>
+            <span></span>
+            <span></span>
+            <span></span>
+            <span></span>
+
+        </div>
+
+        <!-- NEXT -->
+
+        <button
+            onclick="submitAnswer()"
+            class="submit-btn">
+
+            NEXT QUESTION
+
+        </button>
+
+    </div>
+
+    <!-- FEEDBACK -->
+
+    <div class="glass-card feedback-card">
+
+        <div class="card-header">
+
+            AI FEEDBACK
+
+        </div>
+
+        <pre id="feedback">
+
+Waiting for response...
+
+        </pre>
+
+    </div>
+
+</div>
+
 <script>
 
-let currentQuestion = "";
+let questions = [];
+
+let currentQuestionIndex = 0;
+
+let recognition;
+
+let timerInterval;
+
+let timeLeft = 0;
 
 /* =========================================
    START INTERVIEW
@@ -201,7 +231,7 @@ async function startInterview() {
         document.getElementById("style").value;
 
     document.getElementById("question").innerText =
-        "Generating futuristic interview question...";
+        "Generating interview questions...";
 
     const response = await fetch("/start", {
 
@@ -220,59 +250,117 @@ async function startInterview() {
 
     const data = await response.json();
 
-    currentQuestion = data.question;
+    questions = data.questions;
+
+    currentQuestionIndex = 0;
+
+    showQuestion();
+}
+
+/* =========================================
+   SHOW QUESTION
+========================================= */
+
+function showQuestion() {
+
+    if (currentQuestionIndex >= questions.length) {
+
+        document.getElementById("question").innerText =
+            "✅ Interview Completed";
+
+        document.getElementById("timer").innerText =
+            "00:00";
+
+        return;
+    }
+
+    const question =
+        questions[currentQuestionIndex];
 
     document.getElementById("question").innerText =
-        data.question;
+        question;
+
+    document.getElementById("questionCount").innerText =
+        `${currentQuestionIndex + 1}/10`;
+
+    document.getElementById("answer").value = "";
+
+    startTimer(question);
 }
 
 /* =========================================
-   SUBMIT ANSWER
+   TIMER
 ========================================= */
 
-async function submitAnswer() {
+function startTimer(question) {
 
-    const answer =
-        document.getElementById("answer").value;
+    clearInterval(timerInterval);
 
-    document.getElementById("feedback").innerText =
-        "Analyzing answer and communication style...";
+    const words =
+        question.split(" ").length;
 
-    const response = await fetch("/submit", {
+    timeLeft =
+        Math.max(20, words * 3);
 
-        method: "POST",
+    updateTimer();
 
-        headers: {
-            "Content-Type": "application/json"
-        },
+    timerInterval = setInterval(() => {
 
-        body: JSON.stringify({
+        timeLeft--;
 
-            question: currentQuestion,
+        updateTimer();
 
-            answer: answer
+        if (timeLeft <= 0) {
 
-        })
+            clearInterval(timerInterval);
 
-    });
+            stopVoiceInput();
 
-    const data = await response.json();
+            submitAnswer();
+        }
 
-    document.getElementById("feedback").innerText =
-        data.feedback;
+    }, 1000);
+}
+
+function updateTimer() {
+
+    const minutes =
+        Math.floor(timeLeft / 60);
+
+    const seconds =
+        timeLeft % 60;
+
+    document.getElementById("timer").innerText =
+        `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
 }
 
 /* =========================================
-   VOICE INPUT SYSTEM
+   VOICE INPUT
 ========================================= */
-
-let recognition;
 
 function startVoiceInput() {
 
     const SpeechRecognition =
         window.SpeechRecognition ||
         window.webkitSpeechRecognition;
+
+    if (!SpeechRecognition) {
+
+        alert(
+            "Speech Recognition not supported."
+        );
+
+        return;
+    }
+
+    recognition =
+        new SpeechRecognition();
+
+    recognition.lang = "en-US";
+
+    recognition.continuous = true;
+
+    recognition.interimResults = true;
 
     const answerBox =
         document.getElementById("answer");
@@ -283,126 +371,116 @@ function startVoiceInput() {
     const visualizer =
         document.querySelector(".audio-visualizer");
 
-    if (!SpeechRecognition) {
+    let finalTranscript = "";
 
-        alert(
-            "Speech Recognition not supported in this browser."
-        );
+    recognition.start();
 
-        return;
-    }
+    visualizer.classList.add("active");
 
-    navigator.mediaDevices.getUserMedia({
+    voiceStatus.innerText =
+        "🎤 Listening...";
 
-        audio: true
+    recognition.onresult = function(event) {
 
-    })
+        let interimTranscript = "";
 
-    .then(function(stream) {
+        for (
+            let i = event.resultIndex;
+            i < event.results.length;
+            i++
+        ) {
 
-        recognition =
-            new SpeechRecognition();
+            const transcript =
+                event.results[i][0].transcript;
 
-        recognition.lang = "en-US";
+            if (event.results[i].isFinal) {
 
-        recognition.continuous = true;
-
-        recognition.interimResults = true;
-
-        recognition.maxAlternatives = 1;
-
-        let finalTranscript = "";
-
-        answerBox.value = "";
-
-        recognition.start();
-
-        visualizer.classList.add("active");
-
-        voiceStatus.innerText =
-            "🎤 Listening... Speak now";
-
-        /* =========================
-           RESULTS
-        ========================= */
-
-        recognition.onresult = function(event) {
-
-            let interimTranscript = "";
-
-            for (
-                let i = event.resultIndex;
-                i < event.results.length;
-                i++
-            ) {
-
-                const transcript =
-                    event.results[i][0].transcript;
-
-                if (
-                    event.results[i].isFinal
-                ) {
-
-                    finalTranscript +=
-                        transcript + " ";
-
-                } else {
-
-                    interimTranscript +=
-                        transcript;
-                }
-            }
-
-            answerBox.value =
-                finalTranscript +
-                interimTranscript;
-        };
-
-        /* =========================
-           ERROR
-        ========================= */
-
-        recognition.onerror = function(event) {
-
-            console.log(event);
-
-            visualizer.classList.remove("active");
-
-            voiceStatus.innerText =
-                "❌ Error: " + event.error;
-        };
-
-        /* =========================
-           END
-        ========================= */
-
-        recognition.onend = function() {
-
-            visualizer.classList.remove("active");
-
-            if (
-                answerBox.value.trim() !== ""
-            ) {
-
-                voiceStatus.innerText =
-                    "✅ Voice Captured Successfully";
+                finalTranscript += transcript + " ";
 
             } else {
 
-                voiceStatus.innerText =
-                    "⚠️ No Voice Detected";
+                interimTranscript += transcript;
             }
-        };
+        }
 
-    })
+        answerBox.value =
+            finalTranscript + interimTranscript;
+    };
 
-    .catch(function(err) {
+    recognition.onend = function() {
 
-        console.log(err);
+        visualizer.classList.remove("active");
 
         voiceStatus.innerText =
-            "❌ Please allow microphone access";
+            "✅ Voice Captured";
+    };
+}
+
+/* =========================================
+   STOP SPEAKING
+========================================= */
+
+function stopVoiceInput() {
+
+    if (recognition) {
+
+        recognition.stop();
+
+        document.querySelector(
+            ".audio-visualizer"
+        ).classList.remove("active");
+
+        document.getElementById(
+            "voiceStatus"
+        ).innerText =
+            "⏹ Recording Stopped";
+    }
+}
+
+/* =========================================
+   SUBMIT ANSWER
+========================================= */
+
+async function submitAnswer() {
+
+    clearInterval(timerInterval);
+
+    const answer =
+        document.getElementById("answer").value;
+
+    const question =
+        questions[currentQuestionIndex];
+
+    document.getElementById("feedback").innerText =
+        "Analyzing response...";
+
+    const response = await fetch("/submit", {
+
+        method: "POST",
+
+        headers: {
+            "Content-Type": "application/json"
+        },
+
+        body: JSON.stringify({
+            question,
+            answer
+        })
+
     });
+
+    const data = await response.json();
+
+    document.getElementById("feedback").innerText =
+        data.feedback;
+
+    currentQuestionIndex++;
+
+    setTimeout(() => {
+
+        showQuestion();
+
+    }, 4000);
 }
 
 </script>

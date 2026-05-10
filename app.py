@@ -1,5 +1,6 @@
 from flask import Flask, render_template, request, jsonify
 from google import genai
+import json
 
 # =========================================
 # GEMINI CONFIG
@@ -18,15 +19,15 @@ client = genai.Client(api_key=API_KEY)
 app = Flask(__name__)
 
 # =========================================
-# GENERATE QUESTION
+# GENERATE 10 QUESTIONS
 # =========================================
 
-def generate_question(role, style):
+def generate_questions(role, style):
 
     prompt = f"""
     You are an AI interviewer.
 
-    Generate ONE interview question for:
+    Generate EXACTLY 10 interview questions.
 
     Role:
     {role}
@@ -35,10 +36,22 @@ def generate_question(role, style):
     {style}
 
     Rules:
-    - ask only one question
-    - professional tone
-    - realistic interview question
+    - ask only interview questions
+    - no numbering
     - concise
+    - professional
+    - realistic
+    - varied difficulty
+
+    Return ONLY valid JSON:
+
+    {{
+      "questions": [
+        "question 1",
+        "question 2",
+        "question 3"
+      ]
+    }}
     """
 
     try:
@@ -48,11 +61,19 @@ def generate_question(role, style):
             contents=prompt
         )
 
-        return response.text
+        text = response.text.strip()
+
+        if text.startswith("```json"):
+            text = text.replace("```json", "")
+            text = text.replace("```", "")
+
+        data = json.loads(text)
+
+        return data["questions"]
 
     except Exception as e:
 
-        return f"Error: {str(e)}"
+        return [f"Error: {str(e)}"]
 
 # =========================================
 # EVALUATE ANSWER
@@ -69,40 +90,44 @@ def evaluate_answer(question, answer):
     Candidate Answer:
     {answer}
 
-    Analyze the candidate on:
+    Analyze the candidate based on:
 
     1. Technical Accuracy
-    2. Communication Clarity
-    3. Confidence Level
-    4. Professionalism
-    5. Fluency
-    6. Conciseness
+    2. Communication Skills
+    3. Confidence
+    4. Fluency
+    5. Professionalism
 
-    STRICTLY GIVE OUTPUT IN THIS FORMAT:
+    STRICT RULES:
+
+    - Feedback should be SHORT
+    - Maximum half-page
+    - Crisp and professional
+    - No lengthy explanations
+    - No teaching paragraphs
+    - Keep feedback realistic
+
+    OUTPUT FORMAT:
 
     Overall Score: X/10
 
     Technical Accuracy:
     short feedback
 
-    Communication Clarity:
+    Communication Skills:
     short feedback
 
-    Confidence Level:
-    short feedback
-
-    Professionalism:
+    Confidence:
     short feedback
 
     Fluency:
     short feedback
 
-    Improvement Tip:
-    short suggestion
+    Professionalism:
+    short feedback
 
-    Rules:
-    - concise feedback
-    - professional tone
+    Final Suggestion:
+    short improvement tip
     """
 
     try:
@@ -119,7 +144,7 @@ def evaluate_answer(question, answer):
         return f"Error: {str(e)}"
 
 # =========================================
-# ROUTES
+# HOME
 # =========================================
 
 @app.route("/")
@@ -140,10 +165,13 @@ def start():
 
     style = data["style"]
 
-    question = generate_question(role, style)
+    questions = generate_questions(
+        role,
+        style
+    )
 
     return jsonify({
-        "question": question
+        "questions": questions
     })
 
 # =========================================

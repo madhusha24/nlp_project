@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport"
+        content="width=device-width, initial-scale=1.0">
+
+    <title>InterviewPulse</title>
+
+    <link rel="stylesheet"
+        href="{{ url_for('static', filename='style.css') }}">
+
+    <link rel="preconnect"
+        href="https://fonts.googleapis.com">
+
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&family=Poppins:wght@300;400;500;600&display=swap"
+        rel="stylesheet">
+
+</head>
+
+<body>
+
+    <div class="main-container">
+
+        <!-- HERO -->
+
+        <div class="hero-section">
+
+            <h1>
+                INTERVIEW<span>PULSE</span>
+            </h1>
+
+            <p>
+                Futuristic AI Interview Assessment Platform
+            </p>
+
+        </div>
+
+        <!-- CONTROL PANEL -->
+
+        <div class="control-panel">
+
+            <div class="input-group">
+
+                <label>ROLE</label>
+
+                <select id="role">
+
+                    <option>Software Developer</option>
+                    <option>Data Scientist</option>
+                    <option>AI/ML Engineer</option>
+                    <option>Data Analyst</option>
+                    <option>HR Interview</option>
+
+                </select>
+
+            </div>
+
+            <div class="input-group">
+
+                <label>INTERVIEW STYLE</label>
+
+                <select id="style">
+
+                    <option>Google Style</option>
+                    <option>Startup Style</option>
+                    <option>TCS/Infosys Style</option>
+
+                </select>
+
+            </div>
+
+            <button
+                onclick="startInterview()"
+                class="start-btn">
+
+                START INTERVIEW
+
+            </button>
+
+        </div>
+
+        <!-- QUESTION -->
+
+        <div class="glass-card">
+
+            <div class="card-header">
+
+                CURRENT QUESTION
+
+            </div>
+
+            <div
+                id="question"
+                class="question-text">
+
+                Press Start Interview
+
+            </div>
+
+        </div>
+
+        <!-- ANSWER -->
+
+        <div class="glass-card">
+
+            <div class="card-header">
+
+                YOUR ANSWER
+
+            </div>
+
+            <textarea
+                id="answer"
+                placeholder="Your speech will appear here..."
+            ></textarea>
+
+            <!-- VOICE CONTROLS -->
+
+            <div class="voice-controls">
+
+                <button
+                    onclick="startVoiceInput()"
+                    class="voice-btn">
+
+                    🎤 START SPEAKING
+
+                </button>
+
+                <div
+                    class="voice-status"
+                    id="voiceStatus">
+
+                    Voice Assistant Idle
+
+                </div>
+
+            </div>
+
+            <!-- AUDIO VISUALIZER -->
+
+            <div class="audio-visualizer">
+
+                <span></span>
+                <span></span>
+                <span></span>
+                <span></span>
+                <span></span>
+
+            </div>
+
+            <!-- SUBMIT -->
+
+            <button
+                onclick="submitAnswer()"
+                class="submit-btn">
+
+                SUBMIT ANSWER
+
+            </button>
+
+        </div>
+
+        <!-- FEEDBACK -->
+
+        <div class="glass-card feedback-card">
+
+            <div class="card-header">
+
+                AI FEEDBACK
+
+            </div>
+
+            <pre id="feedback">
+
+Waiting for response...
+
+            </pre>
+
+        </div>
+
+    </div>
+
+<script>
+
+let currentQuestion = "";
+
+/* =========================================
+   START INTERVIEW
+========================================= */
+
+async function startInterview() {
+
+    const role =
+        document.getElementById("role").value;
+
+    const style =
+        document.getElementById("style").value;
+
+    document.getElementById("question").innerText =
+        "Generating futuristic interview question...";
+
+    const response = await fetch("/start", {
+
+        method: "POST",
+
+        headers: {
+            "Content-Type": "application/json"
+        },
+
+        body: JSON.stringify({
+            role,
+            style
+        })
+
+    });
+
+    const data = await response.json();
+
+    currentQuestion = data.question;
+
+    document.getElementById("question").innerText =
+        data.question;
+}
+
+/* =========================================
+   SUBMIT ANSWER
+========================================= */
+
+async function submitAnswer() {
+
+    const answer =
+        document.getElementById("answer").value;
+
+    document.getElementById("feedback").innerText =
+        "Analyzing answer and communication style...";
+
+    const response = await fetch("/submit", {
+
+        method: "POST",
+
+        headers: {
+            "Content-Type": "application/json"
+        },
+
+        body: JSON.stringify({
+
+            question: currentQuestion,
+
+            answer: answer
+
+        })
+
+    });
+
+    const data = await response.json();
+
+    document.getElementById("feedback").innerText =
+        data.feedback;
+}
+
+/* =========================================
+   VOICE INPUT SYSTEM
+========================================= */
+
+let recognition;
+
+function startVoiceInput() {
+
+    const SpeechRecognition =
+        window.SpeechRecognition ||
+        window.webkitSpeechRecognition;
+
+    const answerBox =
+        document.getElementById("answer");
+
+    const voiceStatus =
+        document.getElementById("voiceStatus");
+
+    const visualizer =
+        document.querySelector(".audio-visualizer");
+
+    if (!SpeechRecognition) {
+
+        alert(
+            "Speech Recognition not supported in this browser."
+        );
+
+        return;
+    }
+
+    navigator.mediaDevices.getUserMedia({
+
+        audio: true
+
+    })
+
+    .then(function(stream) {
+
+        recognition =
+            new SpeechRecognition();
+
+        recognition.lang = "en-US";
+
+        recognition.continuous = true;
+
+        recognition.interimResults = true;
+
+        recognition.maxAlternatives = 1;
+
+        let finalTranscript = "";
+
+        answerBox.value = "";
+
+        recognition.start();
+
+        visualizer.classList.add("active");
+
+        voiceStatus.innerText =
+            "🎤 Listening... Speak now";
+
+        /* =========================
+           RESULTS
+        ========================= */
+
+        recognition.onresult = function(event) {
+
+            let interimTranscript = "";
+
+            for (
+                let i = event.resultIndex;
+                i < event.results.length;
+                i++
+            ) {
+
+                const transcript =
+                    event.results[i][0].transcript;
+
+                if (
+                    event.results[i].isFinal
+                ) {
+
+                    finalTranscript +=
+                        transcript + " ";
+
+                } else {
+
+                    interimTranscript +=
+                        transcript;
+                }
+            }
+
+            answerBox.value =
+                finalTranscript +
+                interimTranscript;
+        };
+
+        /* =========================
+           ERROR
+        ========================= */
+
+        recognition.onerror = function(event) {
+
+            console.log(event);
+
+            visualizer.classList.remove("active");
+
+            voiceStatus.innerText =
+                "❌ Error: " + event.error;
+        };
+
+        /* =========================
+           END
+        ========================= */
+
+        recognition.onend = function() {
+
+            visualizer.classList.remove("active");
+
+            if (
+                answerBox.value.trim() !== ""
+            ) {
+
+                voiceStatus.innerText =
+                    "✅ Voice Captured Successfully";
+
+            } else {
+
+                voiceStatus.innerText =
+                    "⚠️ No Voice Detected";
+            }
+        };
+
+    })
+
+    .catch(function(err) {
+
+        console.log(err);
+
+        voiceStatus.innerText =
+            "❌ Please allow microphone access";
+    });
+}
+
+</script>
+
+</body>
+</html>
